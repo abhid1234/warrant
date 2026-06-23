@@ -1,0 +1,29 @@
+# deps / build
+node_modules/
+dist/
+.next/
+.vercel/
+
+# env — keep .example
+.env
+.env.*
+!.env.example
+
+# claude / local
+**/settings.local.json
+.claude/settings.local.json
+
+# secrets
+*.pem
+*.key
+credentials.json
+
+# launch / social drafts NEVER in git 
+launch-drafts/
+*-linkedin.md
+*-x.md
+*-substack.md
+
+# os / editor
+.DS_Store
+.vercel

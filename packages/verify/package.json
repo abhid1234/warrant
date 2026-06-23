@@ -1,0 +1,30 @@
+{
+  "name": "@avee1234/warrant-verify",
+  "version": "0.1.0",
+  "description": "Zero-dependency Warrant verifier — runs the world-state outcome check against ground truth and renders a verdict (warranted | refuted | unverifiable). Reuses the OpenTrajectory/Inspector judge for fuzzy outcomes; the deterministic world-state engine is the new part.",
+  "type": "module",
+  "bin": { "warrant": "./dist/src/cli.js" },
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/src/index.d.ts", "import": "./dist/src/index.js" },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.json && node dist/test/run.js",
+    "verify-example": "node dist/src/cli.js verify ../../examples/flight-booking.warrant.json",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "files": ["dist", "src", "README.md"],
+  "keywords": ["warrant", "agent", "outcome-verification", "world-state", "reputation", "a2a", "opentrajectory", "open-standard"],
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "repository": { "type": "git", "url": "git+https://github.com/abhid1234/warrant.git", "directory": "packages/verify" },
+  "homepage": "https://github.com/abhid1234/warrant#readme",
+  "bugs": { "url": "https://github.com/abhid1234/warrant/issues" },
+  "publishConfig": { "access": "public" },
+  "comment": "dependencies is intentionally empty — uses only Node built-ins (no-external-deps constraint). devDependencies are build tooling only.",
+  "dependencies": {},
+  "devDependencies": { "typescript": "*" }
+}

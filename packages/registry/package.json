@@ -1,0 +1,15 @@
+{
+  "name": "@warrant/registry",
+  "version": "0.1.0",
+  "description": "Optional hosted reputation registry — re-verifies and signature-checks every warrant before counting it, then serves portable, context-conditioned reputation. Zero-dep (Node built-ins).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "serve": "tsc -p tsconfig.json && node dist/registry/src/server.js",
+    "test": "tsc -p tsconfig.json && node dist/registry/test/run.js"
+  },
+  "comment": "No dependencies — Node built-ins only (no external deps). Imports the sibling @warrant/verify by source path; both compile together.",
+  "dependencies": {},
+  "devDependencies": { "typescript": "*" }
+}

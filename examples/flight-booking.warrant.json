@@ -1,0 +1,74 @@
+{
+  "warrant_version": "0",
+  "warrant_id": "wrt_2f1a9c7e-booked",
+  "issued_at": "2026-06-22T18:30:05Z",
+  "issuer": { "id": "verifier://warrant-demo", "name": "Warrant Verifier", "key_id": "demo-ed25519-1" },
+  "subject": { "id": "https://agents.example/travel-booker/card.json", "name": "TravelBooker" },
+  "caller": { "id": "https://agents.example/concierge/card.json", "name": "Concierge" },
+  "task_context": { "domain": "travel.booking", "capability": "book_flight", "tags": ["a2a-demo"] },
+  "intent": {
+    "description": "Book one economy seat SFO->JFK on 2026-07-01 for Alex Rivera.",
+    "parameters": { "from": "SFO", "to": "JFK", "date": "2026-07-01", "passenger": "Alex Rivera", "cabin": "economy" },
+    "success_criteria": [
+      "A confirmed PNR exists in the airline system for this passenger and itinerary.",
+      "The cabin is economy."
+    ]
+  },
+  "claimed_outcome": {
+    "status": "COMPLETED",
+    "summary": "Booked. Confirmation X7K2QL, seat 14C, economy.",
+    "asserted_facts": { "pnr": "X7K2QL", "seat": "14C", "cabin": "economy" },
+    "source": "self-report"
+  },
+  "verification": {
+    "method": "world-state-probe",
+    "checked_at": "2026-06-22T18:30:04Z",
+    "verifier_note": "Queried the airline PNR API directly, independent of the subject agent's report. The subject does not control this system.",
+    "evidence": [
+      {
+        "source": "amadeus-pnr-api",
+        "independent": true,
+        "probe": "GET /pnr/X7K2QL",
+        "observed": { "status": "CONFIRMED", "passenger": "Alex Rivera", "itinerary": "SFO-JFK 2026-07-01", "seat": "14C", "cabin": "economy" },
+        "expected": { "pnr": "X7K2QL", "seat": "14C", "cabin": "economy", "passenger": "Alex Rivera", "itinerary": "SFO-JFK 2026-07-01" },
+        "match": "match"
+      }
+    ]
+  },
+  "verdict": {
+    "value": "warranted",
+    "confidence": 0.99,
+    "reasoning": "Independent airline PNR lookup returns a CONFIRMED reservation whose passenger, itinerary, seat, and cabin all match the claimed facts and the success criteria. The world changed as claimed.",
+    "evaluator": "warrant/verify 0.1 (illustrative example output)"
+  },
+  "body": {
+    "ot_version": "0.1",
+    "trajectory_id": "demo-travelbooker-booked",
+    "harness": { "name": "a2a-demo", "version": "0.1" },
+    "task": { "task_id": "book-sfo-jfk", "description": "Book one economy seat SFO->JFK 2026-07-01 for Alex Rivera." },
+    "model": "claude-opus-4-8",
+    "steps": [
+      { "index": 0, "role": "user", "message": { "text": "Book one economy seat SFO->JFK on 2026-07-01 for Alex Rivera." } },
+      { "index": 1, "role": "assistant", "tool_call": {
+        "id": "c1", "name": "search_flights", "args": { "from": "SFO", "to": "JFK", "date": "2026-07-01", "cabin": "economy" },
+        "result": "Flight UA517 available, economy, seat 14C open.", "success": true } },
+      { "index": 2, "role": "assistant", "tool_call": {
+        "id": "c2", "name": "book_flight", "args": { "flight": "UA517", "seat": "14C", "passenger": "Alex Rivera" },
+        "result": "Booked. PNR X7K2QL.", "success": true } },
+      { "index": 3, "role": "assistant", "message": { "text": "Booked. Confirmation X7K2QL, seat 14C, economy." } }
+    ],
+    "outcome": {
+      "status": "success",
+      "resolved": true,
+      "verdict": {
+        "diagnosis": "CLEAN",
+        "category": "Nominal run",
+        "confidence": 0.97,
+        "reasoning": "The agent searched, booked, and reported a PNR with no anomalous steps.",
+        "evaluator": "opentrajectory/judge (illustrative example output)"
+      }
+    },
+    "metadata": { "note": "OpenTrajectory body = the subject's self-reported trace. It is the claim's narrative, NOT the warrant's evidence; the warrant verdict comes from the independent PNR probe in verification.evidence." }
+  },
+  "signature": { "alg": "Ed25519", "key_id": "demo-ed25519-1", "value": "ILLUSTRATIVE_BASE64URL_SIGNATURE_NOT_REAL" }
+}

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/abhid1234/warrant/schema/warrant-0.schema.json",
+  "title": "Warrant",
+  "description": "Open, vendor-neutral signed attestation that an agent's claimed outcome was independently checked against the world. v0. Canonical machine-readable companion to docs/warrant-spec.md. The warrant body is an OpenTrajectory 0.1 record; the verdict is derived from world-state evidence, never from the self-reported trace.",
+  "type": "object",
+  "required": ["warrant_version", "warrant_id", "issued_at", "issuer", "subject", "task_context", "intent", "claimed_outcome", "verification", "verdict"],
+  "additionalProperties": true,
+  "properties": {
+    "warrant_version": { "type": "string", "description": "Spec version, e.g. \"0\"." },
+    "warrant_id": { "type": "string", "minLength": 1 },
+    "issued_at": { "type": "string", "description": "RFC 3339 timestamp the verdict was sealed." },
+    "issuer": { "$ref": "#/$defs/party", "description": "Who ran the check and signs the warrant. MUST differ from subject." },
+    "subject": { "$ref": "#/$defs/party", "description": "The agent the warrant is about." },
+    "caller": { "$ref": "#/$defs/party", "description": "The party that hired the subject." },
+    "task_context": { "$ref": "#/$defs/task_context" },
+    "intent": { "$ref": "#/$defs/intent" },
+    "claimed_outcome": { "$ref": "#/$defs/claimed_outcome" },
+    "verification": { "$ref": "#/$defs/verification" },
+    "verdict": { "$ref": "#/$defs/verdict" },
+    "body": { "type": "object", "description": "Full OpenTrajectory 0.1 record of the subject's run. Context/claim, NOT evidence." },
+    "signature": { "$ref": "#/$defs/signature" }
+  },
+  "$defs": {
+    "party": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Stable id; for A2A agents the Agent Card URL or a DID." },
+        "name": { "type": "string" },
+        "key_id": { "type": "string", "description": "Public-key identifier; required on issuer when the warrant is signed." }
+      }
+    },
+    "task_context": {
+      "type": "object",
+      "required": ["domain"],
+      "properties": {
+        "domain": { "type": "string", "description": "Coarse dotted skill bucket, e.g. travel.booking, payments.refund, code.bugfix." },
+        "capability": { "type": "string", "description": "Specific A2A skill/capability id invoked." },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": { "type": "string" },
+        "parameters": { "type": "object" },
+        "success_criteria": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "claimed_outcome": {
+      "type": "object",
+      "required": ["status", "source"],
+      "properties": {
+        "status": { "type": "string", "description": "Subject's self-reported status; for A2A mirror the task state." },
+        "summary": { "type": "string" },
+        "asserted_facts": { "type": "object", "description": "Structured facts the subject asserts are now true; precisely what verification probes." },
+        "source": { "type": "string", "enum": ["self-report"], "description": "Always self-report: this is the agent's own word, the claim under test." }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["method", "checked_at", "evidence"],
+      "properties": {
+        "method": { "type": "string", "enum": ["world-state-probe", "post-condition", "judge", "none"] },
+        "checked_at": { "type": "string" },
+        "verifier_note": { "type": "string" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence_item" }
+        }
+      }
+    },
+    "evidence_item": {
+      "type": "object",
+      "required": ["source", "independent", "observed", "match"],
+      "properties": {
+        "source": { "type": "string", "description": "The system observed." },
+        "independent": { "type": "boolean", "description": "True iff from a source the subject does not control and could not fabricate. warranted REQUIRES >=1 independent+match item." },
+        "probe": { "type": "string", "description": "Exact query/action run to observe ground truth." },
+        "observed": { "description": "What the world actually showed." },
+        "expected": { "description": "What the claim predicted." },
+        "match": { "type": "string", "enum": ["match", "mismatch", "absent", "inconclusive"] }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["value", "reasoning"],
+      "properties": {
+        "value": { "type": "string", "enum": ["warranted", "refuted", "unverifiable"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reasoning": { "type": "string" },
+        "evaluator": { "type": "string" }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["alg", "key_id", "value"],
+      "properties": {
+        "alg": { "type": "string", "description": "Default Ed25519. Non-crypto: detached signature over the canonical warrant (JCS), no chain/token/staking." },
+        "key_id": { "type": "string" },
+        "value": { "type": "string", "description": "base64url signature over the warrant with the signature field removed, canonicalized." }
+      }
+    }
+  }
+}

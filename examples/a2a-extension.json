@@ -1,0 +1,48 @@
+{
+  "_comment": "Concrete A2A extension manifest for Warrant (spec v0, docs/warrant-spec.md §9). Two parts: (1) the extension descriptor, and (2) an example A2A Agent Card that declares it under capabilities.extensions. Illustrative — host/URI final per naming. The extension is opt-in per request and changes no A2A core state machine.",
+  "extension": {
+    "uri": "https://warrant.dev/a2a/ext/outcome-verification/v0",
+    "name": "Warrant — Outcome Verification",
+    "version": "0",
+    "type": "data+method",
+    "description": "World-state outcome warrants for completed A2A tasks. A verifier independently checks ground truth (not the agent's self-reported trace) and attaches a signed warrant (warranted | refuted | unverifiable) to the task as an artifact.",
+    "spec": "docs/warrant-spec.md",
+    "schema": "schema/warrant-0.schema.json",
+    "params_schema": {
+      "domains": "string[] — task-context domains this agent issues/accepts warrants for, e.g. travel.booking, payments.refund",
+      "role": "issuer | subject | both"
+    },
+    "carriage": "A warrant is returned as an A2A Artifact (a DataPart whose value is the warrant JSON) on the completed Task, or in the extension response data. It references the task it certifies via intent and claimed_outcome.",
+    "methods": [
+      {
+        "name": "warrant/issue",
+        "description": "Request a warrant for a completed task: given the task id + claimed outcome, run the world-state check and return a signed warrant.",
+        "params": { "task_id": "string", "claimed_outcome": "ClaimedOutcome (see schema)" },
+        "returns": "Warrant (see schema/warrant-0.schema.json)"
+      }
+    ]
+  },
+  "example_agent_card": {
+    "protocolVersion": "1.0",
+    "name": "TravelBooker",
+    "description": "Books flights. Accepts world-state outcome warrants for completed bookings.",
+    "url": "https://agents.example/travel-booker/a2a",
+    "version": "1.4.0",
+    "capabilities": {
+      "streaming": true,
+      "extensions": [
+        {
+          "uri": "https://warrant.dev/a2a/ext/outcome-verification/v0",
+          "description": "Accepts world-state outcome warrants for completed tasks.",
+          "required": false,
+          "params": { "domains": ["travel.booking"], "role": "subject" }
+        }
+      ]
+    },
+    "defaultInputModes": ["text/plain"],
+    "defaultOutputModes": ["text/plain"],
+    "skills": [
+      { "id": "book_flight", "name": "Book a flight", "description": "Search and book a flight; returns a confirmation PNR." }
+    ]
+  }
+}
