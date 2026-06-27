@@ -65,6 +65,16 @@ function render(warrants: Warrant[]): string {
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Warrant — Playground</title>
+<meta name="description" content="Verify any warrant in your browser — the verdict is re-derived from evidence, never trusted.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Warrant — Playground">
+<meta property="og:description" content="Pick or paste a warrant; it's re-verified in your browser. Claim vs. world, a tamper toggle, and the moat made interactive.">
+<meta property="og:image" content="https://warrant-gold.vercel.app/og.png">
+<meta property="og:url" content="https://warrant-gold.vercel.app/playground">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Warrant — Playground">
+<meta name="twitter:description" content="Verify any warrant in your browser. The verdict is re-derived from evidence, never trusted.">
+<meta name="twitter:image" content="https://warrant-gold.vercel.app/og.png">
 <style>
   :root{--ink:#1a1814;--paper:#f7f5ef;--rule:#d9d4c7;--dim:#7a7468;--hi:#1b5e20;--lo:#7f1d1d;--mid:#8a6d1b;}
   *{box-sizing:border-box}
