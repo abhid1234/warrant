@@ -7,6 +7,7 @@ warrants. Zero dependencies; no server.
 
 ## Run it
 ```bash
+npm run github         # REAL verification against the live GitHub API (not a fixture)
 npm run demo           # the live "did it book the flight?" clip (console)
 npm run cross-harness  # one agent under 2 harnesses -> one portable reputation (v2)
 npm run a2a            # live HTTP end-to-end: airline + 2 A2A agents + verifier + registry (v3)

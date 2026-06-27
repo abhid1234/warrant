@@ -74,3 +74,33 @@ export function queryProbe(opts: {
 export function staticProbe(source: string, observed: unknown, independent = true): Probe {
   return { source, independent, run: async () => ({ observed }) };
 }
+
+/**
+ * A REAL probe: verify a claim about a GitHub issue against the live GitHub API.
+ * Picks { title, state } from the issue so a claim like { title, state } is
+ * checked against ground truth. A non-existent issue 404s -> observed null ->
+ * `absent`. Pass a token to raise the rate limit / read private repos.
+ * `baseUrl` is for testing against a loopback; defaults to the real API.
+ */
+export function githubIssueProbe(
+  owner: string,
+  repo: string,
+  issue: number,
+  opts: { token?: string; baseUrl?: string } = {},
+): Probe {
+  const headers: Record<string, string> = {
+    accept: "application/vnd.github+json",
+    "user-agent": "warrant-verify",
+  };
+  if (opts.token) headers.authorization = `Bearer ${opts.token}`;
+  const base = (opts.baseUrl ?? "https://api.github.com").replace(/\/+$/, "");
+  return httpJsonProbe({
+    url: `${base}/repos/${owner}/${repo}/issues/${issue}`,
+    source: "api.github.com",
+    headers,
+    pick: (body) => {
+      const o = body as { title?: unknown; state?: unknown } | null;
+      return o && typeof o === "object" ? { title: o.title, state: o.state } : null;
+    },
+  });
+}

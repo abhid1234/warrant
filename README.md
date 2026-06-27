@@ -37,7 +37,8 @@ and [`docs/quickstart.md`](./docs/quickstart.md). Full spec + hard constraints i
 Board live at https://warrant-gold.vercel.app *(pending the one-time protection toggle in [`docs/deploy.md`](./docs/deploy.md))*.
 
 ```bash
-cd packages/verify   && npm test            # zero-dep verifier, 22/22
+cd packages/verify   && npm test            # zero-dep verifier, 23/23
+cd packages/demo     && npm run github       # REAL verification against the live GitHub API
 cd packages/demo     && npm run demo         # live "did it book the flight?" clip
 cd packages/demo     && npm run cross-harness# one agent, 2 harnesses -> one portable reputation
 cd packages/demo     && npm run a2a          # full HTTP end-to-end: A2A + verifier + registry

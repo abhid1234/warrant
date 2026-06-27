@@ -85,6 +85,10 @@ competitor occupies that intersection:
 5. **Portable across harnesses** — `npm run cross-harness`: one agent under two
    harnesses → the same warrant format → one portable reputation keyed by agent
    identity, not harness.
+6. **Real verification (not a fixture)** — `npm run github` checks a claim about a
+   GitHub issue against the **live GitHub API**: an honest claim → warranted, a
+   fabricated title or non-existent issue → refuted. The resulting warrant, with
+   its live-evidence block, is saved in `examples/github-issue.warrant.json`.
 
 ## Defensibility
 The whole stack solved identity/transport/discovery/payment and **left
@@ -100,9 +104,10 @@ agents lying about what they did"* is a shippable product on its own.
   eval vendors.
 - The window is **inferred** from the absence of a shipped competitor plus the velocity
   of adjacent launches — not guaranteed. **MoltBridge** is the live watch-item.
-- Demo data, agents, systems, and signatures in this repo are **illustrative**. The
-  verifier and reputation engine are real and tested; the probes against named external
-  systems are mocked for the demo.
+- The verifier and reputation engine are real and tested, and one example is **fully
+  real**: `npm run github` verifies against the live GitHub API
+  (`examples/github-issue.warrant.json`). The other demos (airline, payments, CI) use
+  **illustrative** data/signatures with mocked probes — clearly marked as such.
 - v1 deliberately covers one demo path (A2A) and a small set of verifier domains.
   Breadth is future work, not a current claim.
 

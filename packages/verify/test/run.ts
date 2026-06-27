@@ -192,7 +192,7 @@ test("reputation: tallies per domain from warrants", () => {
 
 // ---- real HTTP probe (v3) --------------------------------------------------
 import { createServer } from "node:http";
-import { httpJsonProbe, queryProbe } from "../src/probes.js";
+import { httpJsonProbe, queryProbe, githubIssueProbe } from "../src/probes.js";
 
 test("httpJsonProbe issues a correct verdict against a live endpoint", async () => {
   // A loopback "airline" that knows exactly one reservation.
@@ -216,6 +216,30 @@ test("httpJsonProbe issues a correct verdict against a live endpoint", async () 
       [httpJsonProbe({ url: `http://127.0.0.1:${port}/pnr/NOPE99`, source: "airline" })],
     );
     assert.equal(lie.verdict.value, "refuted");
+  } finally {
+    await new Promise<void>((r) => server.close(() => r()));
+  }
+});
+
+test("githubIssueProbe verifies title+state against a GitHub-shaped endpoint", async () => {
+  const server = createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    if (req.url === "/repos/o/r/issues/1") res.end(JSON.stringify({ number: 1, title: "Edited README via GitHub", state: "closed", body: "ignored" }));
+    else { res.statusCode = 404; res.end(JSON.stringify({ message: "Not Found" })); }
+  });
+  await new Promise<void>((r) => server.listen(0, r));
+  const baseUrl = `http://127.0.0.1:${server.address()!.port}`;
+  try {
+    const good = await issueWarrant(
+      { ...base, warrant_id: "gh1", claimed_outcome: { status: "COMPLETED", source: "self-report", asserted_facts: { title: "Edited README via GitHub", state: "closed" } } },
+      [githubIssueProbe("o", "r", 1, { baseUrl })],
+    );
+    assert.equal(good.verdict.value, "warranted");
+    const fake = await issueWarrant(
+      { ...base, warrant_id: "gh2", claimed_outcome: { status: "COMPLETED", source: "self-report", asserted_facts: { title: "nope", state: "open" } } },
+      [githubIssueProbe("o", "r", 99999, { baseUrl })],
+    );
+    assert.equal(fake.verdict.value, "refuted");
   } finally {
     await new Promise<void>((r) => server.close(() => r()));
   }

@@ -1,0 +1,68 @@
+{
+  "warrant_version": "0",
+  "warrant_id": "wrt_gh_honest",
+  "issued_at": "2026-06-23T00:00:00Z",
+  "issuer": {
+    "id": "verifier://warrant-demo",
+    "name": "Warrant Verifier",
+    "key_id": "k1"
+  },
+  "subject": {
+    "id": "https://agents.example/issue-bot/card.json",
+    "name": "IssueBot"
+  },
+  "task_context": {
+    "domain": "github.issue",
+    "capability": "open_issue",
+    "tags": [
+      "real"
+    ]
+  },
+  "intent": {
+    "description": "Verify issue octocat/Hello-World#1 matches the claim.",
+    "success_criteria": [
+      "The issue exists on GitHub with the claimed title and state."
+    ]
+  },
+  "claimed_outcome": {
+    "status": "COMPLETED",
+    "source": "self-report",
+    "summary": "Confirmed issue #1.",
+    "asserted_facts": {
+      "title": "Edited README via GitHub",
+      "state": "closed"
+    }
+  },
+  "verification": {
+    "method": "world-state-probe",
+    "checked_at": "2026-06-23T00:00:00Z",
+    "verifier_note": "Queried authoritative external systems directly, independent of the subject agent.",
+    "evidence": [
+      {
+        "source": "api.github.com",
+        "independent": true,
+        "observed": {
+          "title": "Edited README via GitHub",
+          "state": "closed"
+        },
+        "expected": {
+          "title": "Edited README via GitHub",
+          "state": "closed"
+        },
+        "match": "match",
+        "probe": "GET https://api.github.com/repos/octocat/Hello-World/issues/1"
+      }
+    ]
+  },
+  "verdict": {
+    "value": "warranted",
+    "confidence": 0.95,
+    "reasoning": "Independent evidence confirms the claim (api.github.com): the world changed as claimed and matches the success criteria.",
+    "evaluator": "warrant/verify 0.1"
+  },
+  "signature": {
+    "alg": "Ed25519",
+    "key_id": "k1",
+    "value": "gwGhT3zweq9N429nHoaQnZfaMzeYVa18sDB1nBzLLsxlkrQbmpennwIixahPYsuvYD1ngYShj4v7BqNBI1WtAw"
+  }
+}

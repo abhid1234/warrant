@@ -17,7 +17,7 @@ export type {
 export { computeVerdict, checkVerdict } from "./verdict.js";
 export { compare, gatherEvidence } from "./probe.js";
 export type { Probe, ProbeResult } from "./probe.js";
-export { httpJsonProbe, queryProbe, staticProbe } from "./probes.js";
+export { httpJsonProbe, queryProbe, staticProbe, githubIssueProbe } from "./probes.js";
 export { validate } from "./validate.js";
 export type { ValidationResult } from "./validate.js";
 export { validateAgainstSchema } from "./schema-validate.js";

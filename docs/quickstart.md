@@ -52,6 +52,7 @@ stamp is rejected on re-verify.
 ## See it run
 ```bash
 cd packages/demo
+npm run github          # REAL verification against the live GitHub API (not a fixture)
 npm run demo            # live "did it book the flight?" clip (honest vs liar)
 npm run cross-harness   # one agent under 2 harnesses -> one portable reputation
 npm run a2a             # full HTTP end-to-end: A2A agents + verifier + registry
