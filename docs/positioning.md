@@ -98,6 +98,11 @@ non-crypto, framework-agnostic, world-state outcome verification + verified
 reputation.** Fallback value if "the standard" never lands: *"the tool that catches
 agents lying about what they did"* is a shippable product on its own.
 
+On the natural follow-up — *who runs the verifier, and why trust its warrant?* — see
+[`trust-model.md`](./trust-model.md). The short answer: a warrant carries its own
+re-executable evidence, so you **re-run the check** rather than trust the issuer;
+verifier reputation and N-of-M independence carry the ephemeral cases.
+
 ## Honest caveats (no overclaiming)
 - "Outcome" is now a crowded buzzword. Messaging must aggressively distinguish
   **world-state** from **expected-output grading**, or Warrant gets lumped with the

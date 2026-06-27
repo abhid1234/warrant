@@ -48,7 +48,7 @@ cd packages/registry && npm test             # registry trust gate (valid accept
 
 ## Layout
 ```
-docs/              # gap-analysis (GO), warrant-spec, positioning, quickstart, deploy, v3-roadmap
+docs/              # gap-analysis, warrant-spec, positioning, trust-model, quickstart, deploy, v3-roadmap
 schema/            # warrant-0.schema.json (machine-readable spec companion)
 examples/          # hand-authored warrants (green + red) + a2a-extension manifest
 packages/verify/   # zero-dep verifier — world-state probes, verdict engine, signing, schema, reputation, CLI
