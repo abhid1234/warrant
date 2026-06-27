@@ -21,6 +21,12 @@ export interface RegistryOptions {
    * Zero-dep, single-host durability; swap in a KV/Postgres adapter for scale.
    */
   dataFile?: string;
+  /** Reject warrants whose `issued_at` is older than this many ms (anti-replay/freshness). */
+  maxAgeMs?: number;
+  /** Recognized authoritative sources — grounds the `independent` flag (spec §5.2). */
+  recognizedSources?: string[];
+  /** Injectable clock (ms since epoch) for freshness checks; defaults to Date.now(). */
+  now?: () => number;
 }
 
 export interface SubmitResult {
@@ -35,11 +41,22 @@ export class Registry {
   private trustedKeys: Record<string, string>;
   private requireSigned: boolean;
   private dataFile?: string;
+  private maxAgeMs?: number;
+  private recognizedSource?: (source: string) => boolean;
+  private now: () => number;
+  private seenSig = new Set<string>(); // anti-replay: signed warrants
+  private seenNonce = new Set<string>(); // anti-replay: nonces
 
   constructor(opts: RegistryOptions = {}) {
     this.trustedKeys = opts.trustedKeys ?? {};
     this.requireSigned = opts.requireSigned ?? false;
     this.dataFile = opts.dataFile;
+    this.maxAgeMs = opts.maxAgeMs;
+    this.now = opts.now ?? (() => Date.now());
+    if (opts.recognizedSources) {
+      const set = new Set(opts.recognizedSources);
+      this.recognizedSource = (s: string) => set.has(s);
+    }
     for (const w of opts.seed ?? []) this.warrants.set(w.warrant_id, w);
     this.load(); // re-verify anything already on disk
   }
@@ -55,7 +72,13 @@ export class Registry {
   private accept(w: Warrant): SubmitResult {
     const id = typeof w?.warrant_id === "string" ? w.warrant_id : "(missing id)";
 
-    const v = verifyWarrant(w);
+    // Re-derive verdict + ground `independent` against recognized sources +
+    // reject stale/future-dated warrants (anti-replay/freshness).
+    const v = verifyWarrant(w, {
+      recognizedSource: this.recognizedSource,
+      maxAgeMs: this.maxAgeMs,
+      nowMs: this.now(),
+    });
     if (!v.ok) return { accepted: false, warrant_id: id, reason: "verification failed: " + v.errors.join("; ") };
 
     if (w.signature) {
@@ -66,6 +89,14 @@ export class Registry {
       return { accepted: false, warrant_id: id, reason: "unsigned warrant rejected (requireSigned)" };
     }
 
+    // Anti-replay: a given signature or nonce may be submitted only once.
+    if (w.signature && this.seenSig.has(w.signature.value))
+      return { accepted: false, warrant_id: id, reason: "replay: this signature was already submitted" };
+    if (w.nonce && this.seenNonce.has(w.nonce))
+      return { accepted: false, warrant_id: id, reason: "replay: this nonce was already used" };
+
+    if (w.signature) this.seenSig.add(w.signature.value);
+    if (w.nonce) this.seenNonce.add(w.nonce);
     this.warrants.set(id, w);
     return { accepted: true, warrant_id: id, verdict: v.derivedVerdict.value };
   }

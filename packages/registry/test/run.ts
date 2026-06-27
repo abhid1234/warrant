@@ -69,6 +69,31 @@ test("reputation reflects only accepted warrants", async () => {
   assert.equal(agent.body.warranted, 1);
 });
 
+test("freshness: a stale warrant is rejected", async () => {
+  // mkWarrant is issued_at 2026-06-22; clock is a day later, window is 1 minute.
+  const reg = new Registry({ trustedKeys: { k1: publicKey }, maxAgeMs: 60_000, now: () => Date.parse("2026-06-23T00:00:00Z") });
+  const w = signWarrant(await mkWarrant("st1"), privateKey, "k1");
+  const r = reg.submit(w);
+  assert.equal(r.accepted, false);
+  assert.ok(/stale/.test(r.reason ?? ""));
+});
+
+test("replay: the same signature can't be submitted twice", async () => {
+  const reg = new Registry({ trustedKeys: { k1: publicKey } });
+  const w = signWarrant(await mkWarrant("rp1"), privateKey, "k1");
+  assert.equal(reg.submit(w).accepted, true);
+  const again = reg.submit(w);
+  assert.equal(again.accepted, false);
+  assert.ok(/replay/.test(again.reason ?? ""));
+});
+
+test("source provenance: unrecognized source is not counted as warranted", async () => {
+  // mkWarrant's evidence source is stripe-refunds-api; only-this is recognized instead.
+  const reg = new Registry({ trustedKeys: { k1: publicKey }, recognizedSources: ["only-this"] });
+  const r = reg.submit(signWarrant(await mkWarrant("us1"), privateKey, "k1"));
+  assert.equal(r.accepted, false); // stated warranted, re-derives unverifiable -> rejected
+});
+
 test("durable storage: warrants persist across instances", async () => {
   const file = "/tmp/warrant-registry-persist-test.json";
   writeFileSync(file, "[]");

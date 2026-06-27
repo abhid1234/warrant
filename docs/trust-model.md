@@ -81,8 +81,8 @@ cheaper and more enterprise-palatable than putting money on-chain.
 | Verifier stamps a verdict its evidence doesn't support | `verifyWarrant()` re-derives from evidence; mismatch rejected | ✅ v0 |
 | Verifier fabricates the *observation* | Re-run the probe (persistent state); else N-of-M + verifier reputation | ✅ re-run / ⏳ N-of-M |
 | Verifier colludes with the subject | Same as above — collusion only survives on non-re-runnable evidence *and* a single verifier; independent N-of-M breaks it | ⏳ N-of-M |
-| Subject controls the "independent" source (probes its own API and flags it `independent`) | Consumer must recognize the `source` as authoritative and outside the subject's control; reject unrecognized sources. Source provenance should be required, not asserted | ⚠️ spec gap |
-| **Replay** — resubmit an old valid warrant as if fresh | Today only `warrant_id` dedup. Needs an `issued_at` freshness window + a per-`(subject, task)` nonce | ⚠️ spec gap |
+| Subject controls the "independent" source (probes its own API and flags it `independent`) | Consumer grounds the flag against **recognized sources** — `verifyWarrant(w, { recognizedSource })` / registry `recognizedSources`; an unrecognized source is treated as non-independent | ✅ opt-in |
+| **Replay** — resubmit an old valid warrant as if fresh | **Freshness window** (`maxAgeMs`) rejects stale/future warrants; the registry rejects a previously-seen `signature` or `nonce` | ✅ opt-in |
 | **Sybil verifiers** — spin up many fake verifiers to fake N-of-M consensus | Verifier identity must be costly/established (DID, domain-bound); weight by *recognized* verifiers, not raw count | ⏳ with N-of-M |
 | Key compromise / rotation | Out of scope for v0; relies on existing PKI/JWKS/DID rotation | ⚠️ deferred |
 
@@ -90,10 +90,11 @@ cheaper and more enterprise-palatable than putting money on-chain.
 
 - **Today (v0):** issuer ≠ subject; verdict re-derived from evidence (no trusting the
   stamp); evidence carries the re-executable probe; `independent` flag; non-crypto
-  signature; `unverifiable` as a first-class verdict.
-- **Next (spec extensions):** verifier reputation (the board applied to issuers),
-  N-of-M independent verification, replay protection (`issued_at` window + nonce), and
-  required source provenance for the `independent` claim.
+  signature; `unverifiable` as a first-class verdict. **Opt-in:** source-provenance
+  grounding (`recognizedSource`), freshness window (`maxAgeMs`), and replay protection
+  (signature/`nonce` dedup) — see spec §5.2 and §8.1.
+- **Next (spec extensions):** verifier reputation (the board applied to issuers) and
+  N-of-M independent verification.
 
 ## One-line summary
 **You don't have to trust the verifier — you have to be able to re-run its evidence.**

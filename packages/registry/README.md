@@ -10,8 +10,20 @@ The registry trusts **nothing** it is sent. On every `POST`, it:
 1. **re-derives the verdict** from the warrant's own evidence and schema-validates it
    (`verifyWarrant`) — a flipped/forged stamp is rejected;
 2. **checks the signature** against a configured trusted key (`verifySignature`) —
-   an unknown key or bad signature is rejected.
-Only then is the warrant counted.
+   an unknown key or bad signature is rejected;
+3. **(opt-in) grounds `independent`** against `recognizedSources` — evidence from an
+   unrecognized source doesn't count, so a subject can't probe a system it controls;
+4. **(opt-in) enforces freshness + anti-replay** — `maxAgeMs` rejects stale/future
+   warrants; a previously-seen `signature` or `nonce` is rejected as a replay.
+Only then is the warrant counted. See [`../../docs/trust-model.md`](../../docs/trust-model.md).
+
+```ts
+createRegistryServer({
+  trustedKeys: { "issuer-1": PUBLIC_KEY_PEM },
+  recognizedSources: ["amadeus-pnr-api", "stripe-refunds-api"], // ground `independent`
+  maxAgeMs: 24 * 60 * 60 * 1000,                                  // 24h freshness window
+});
+```
 
 ## Run
 ```bash

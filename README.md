@@ -4,7 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@avee1234/warrant-verify?color=2b8a3e&label=npm%20%40avee1234%2Fwarrant-verify)](https://www.npmjs.com/package/@avee1234/warrant-verify)
 [![live board](https://img.shields.io/badge/live-reputation%20board-2b8a3e)](https://warrant-gold.vercel.app)
-[![tests](https://img.shields.io/badge/tests-27%20passing-2b8a3e)](packages/)
+[![tests](https://img.shields.io/badge/tests-33%20passing-2b8a3e)](packages/)
 [![deps](https://img.shields.io/badge/dependencies-zero-555)](packages/verify/package.json)
 [![license](https://img.shields.io/badge/license-MIT-555)](LICENSE)
 
@@ -37,7 +37,7 @@ and [`docs/quickstart.md`](./docs/quickstart.md). Full spec + hard constraints i
 Board live at https://warrant-gold.vercel.app *(pending the one-time protection toggle in [`docs/deploy.md`](./docs/deploy.md))*.
 
 ```bash
-cd packages/verify   && npm test            # zero-dep verifier, 23/23
+cd packages/verify   && npm test            # zero-dep verifier, 25/25
 cd packages/demo     && npm run github       # REAL verification against the live GitHub API
 cd packages/demo     && npm run demo         # live "did it book the flight?" clip
 cd packages/demo     && npm run cross-harness# one agent, 2 harnesses -> one portable reputation

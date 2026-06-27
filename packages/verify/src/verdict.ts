@@ -11,6 +11,17 @@ import type { Verification, Verdict } from "./types.js";
 
 const CONTRADICTS = (m: string): boolean => m === "mismatch" || m === "absent";
 
+export interface VerdictOptions {
+  /**
+   * Source-provenance check (spec §5.2, trust-model.md). When provided, an
+   * evidence item counts as `independent` only if its source is RECOGNIZED by
+   * the consumer — grounding the otherwise self-asserted `independent` flag. An
+   * unrecognized source is treated as non-independent (downgrades toward
+   * `unverifiable`), so a subject can't probe a system it controls and have it count.
+   */
+  recognizedSource?: (source: string) => boolean;
+}
+
 /**
  * Derive a verdict from a verification block. Pure function.
  *
@@ -20,10 +31,12 @@ const CONTRADICTS = (m: string): boolean => m === "mismatch" || m === "absent";
  *  3. >=1 independent evidence matches and none contradicts -> warranted.
  *  4. Independent evidence exists but is all inconclusive -> unverifiable.
  */
-export function computeVerdict(verification: Verification): Verdict {
+export function computeVerdict(verification: Verification, opts: VerdictOptions = {}): Verdict {
   const evaluator = "warrant/verify 0.1";
   const all = verification.evidence ?? [];
-  const independent = all.filter((e) => e.independent === true);
+  const independent = all.filter(
+    (e) => e.independent === true && (opts.recognizedSource ? opts.recognizedSource(e.source) : true),
+  );
 
   if (verification.method === "none" || independent.length === 0) {
     return {
@@ -77,19 +90,23 @@ export function checkVerdict(args: {
   claimSource: string;
   verification: Verification;
   statedVerdict: { value: string };
+  recognizedSource?: (source: string) => boolean;
 }): { ok: boolean; errors: string[]; derived: Verdict } {
   const errors: string[] = [];
   if (args.issuerId === args.subjectId) errors.push("issuer.id must differ from subject.id (no self-warranting)");
   if (args.claimSource !== "self-report") errors.push('claimed_outcome.source must be "self-report"');
 
-  const derived = computeVerdict(args.verification);
+  const recognized = (e: { independent: boolean; source: string }): boolean =>
+    e.independent && (args.recognizedSource ? args.recognizedSource(e.source) : true);
+
+  const derived = computeVerdict(args.verification, { recognizedSource: args.recognizedSource });
   if (derived.value !== args.statedVerdict.value) {
     errors.push(`stated verdict "${args.statedVerdict.value}" does not match evidence-derived verdict "${derived.value}"`);
   }
   // Re-assert the §5.2 hard rule explicitly (defense in depth).
   if (args.statedVerdict.value === "warranted") {
-    const hasIndepMatch = (args.verification.evidence ?? []).some((e) => e.independent && e.match === "match");
-    if (!hasIndepMatch) errors.push("warranted requires >=1 evidence item with independent:true and match:match");
+    const hasIndepMatch = (args.verification.evidence ?? []).some((e) => recognized(e) && e.match === "match");
+    if (!hasIndepMatch) errors.push("warranted requires >=1 evidence item that is independent, source-recognized, and match");
   }
   return { ok: errors.length === 0, errors, derived };
 }

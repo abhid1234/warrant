@@ -46,6 +46,7 @@ A warrant is a JSON object. Required fields are marked **R**.
 | `verification` | R | object | The independent world-state check (§5) — **the moat**. |
 | `verdict` | R | object | `warranted` \| `refuted` \| `unverifiable` + reasoning (§6). |
 | `body` |  | object | The full **OpenTrajectory 0.1 record** of the run (§7) — context, not evidence. |
+| `nonce` |  | string | Optional anti-replay nonce, unique per `(subject, task)` (§8.1). |
 | `signature` |  | object | Detached signature over the canonical warrant (§8). Required for a warrant to count toward reputation. |
 
 A warrant with everything except `signature` is a valid **unsigned warrant** (useful in tests/demos); it does not roll into reputation until signed.
@@ -129,6 +130,8 @@ Reputation is **always** reported per `domain` (and optionally per `capability`)
 
 **Hard rule:** `verdict.value = warranted` REQUIRES at least one evidence item with `independent: true` and `match: match`. Self-reported evidence (`independent: false`) may *enrich* a warrant but can never, on its own, support `warranted`. This is the line that keeps Warrant out of the trace-grading lane.
 
+**Source provenance.** `independent` is a *claim*, and a malicious subject could probe a system it secretly controls and flag it `independent: true`. To ground the claim, `source` MUST be a **stable, recognizable identifier** (host / URL / DID), and a consumer SHOULD verify it against its own set of **recognized authoritative sources** for the domain — counting an evidence item as independent only if its source is recognized. `verifyWarrant(w, { recognizedSource })` and the registry's `recognizedSources` option enforce this: an unrecognized source is treated as non-independent, downgrading toward `unverifiable`. See [`trust-model.md`](./trust-model.md).
+
 ---
 
 ## 6. `verdict`
@@ -166,6 +169,15 @@ A detached signature over the **canonical warrant** — the warrant object with 
 | `value` | R | string | base64url signature over the canonical warrant. |
 
 No chain, no token, no staking, no on-chain registry — distinct from ERC-8004 by design. Key distribution is left to existing PKI/JWKS/DID infrastructure; Warrant does not invent one.
+
+### 8.1 Anti-replay & freshness
+
+A warrant attests world state **as of `issued_at`**; a stale warrant may no longer hold, and a valid warrant could be resubmitted to inflate reputation. Two opt-in protections, enforced at the consuming end (the registry, or `verifyWarrant`):
+
+- **Freshness window** — reject a warrant whose `issued_at` is older than a configured `maxAgeMs` (or dated in the future beyond clock skew). `verifyWarrant(w, { maxAgeMs })` and the registry `maxAgeMs` option.
+- **Replay protection** — a signed warrant's `signature.value`, and/or an explicit `nonce`, may be accepted only **once**. The registry rejects a previously-seen signature or nonce. (A signature also can't be reattached to a modified warrant — changing any field breaks it.)
+
+These let a registry/consumer ensure each verified outcome is counted once and is still current.
 
 ---
 

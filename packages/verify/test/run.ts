@@ -192,7 +192,7 @@ test("reputation: tallies per domain from warrants", () => {
 
 // ---- real HTTP probe (v3) --------------------------------------------------
 import { createServer } from "node:http";
-import { httpJsonProbe, queryProbe, githubIssueProbe } from "../src/probes.js";
+import { httpJsonProbe, queryProbe, githubIssueProbe, staticProbe } from "../src/probes.js";
 
 test("httpJsonProbe issues a correct verdict against a live endpoint", async () => {
   // A loopback "airline" that knows exactly one reservation.
@@ -251,6 +251,30 @@ test("queryProbe takes an injected lookup", async () => {
     [queryProbe({ source: "postgres:orders", run: () => ({ row: 7 }) })],
   );
   assert.equal(w.verdict.value, "warranted");
+});
+
+// ---- source provenance + freshness (trust-model gaps) ----------------------
+test("recognizedSource grounds the independent flag", async () => {
+  const claim: ClaimedOutcome = { status: "COMPLETED", source: "self-report", asserted_facts: { id: "X" } };
+  const w = await issueWarrant({ ...base, warrant_id: "rs1", claimed_outcome: claim }, [staticProbe("airline-system", { id: "X" })]);
+  assert.equal(w.verdict.value, "warranted"); // default trusts the flag
+  // consumer recognizes a different source -> airline-system isn't independent -> unverifiable
+  const r = verifyWarrant(w, { recognizedSource: (s) => s === "stripe" });
+  assert.equal(r.derivedVerdict.value, "unverifiable");
+  assert.ok(!r.ok);
+  // recognizing the actual source -> warranted, ok
+  const r2 = verifyWarrant(w, { recognizedSource: (s) => s === "airline-system" });
+  assert.equal(r2.derivedVerdict.value, "warranted");
+  assert.ok(r2.ok);
+});
+
+test("freshness window rejects stale and future warrants", async () => {
+  const claim: ClaimedOutcome = { status: "COMPLETED", source: "self-report", asserted_facts: { id: "X" } };
+  const w = await issueWarrant({ ...base, warrant_id: "fr1", issued_at: "2020-01-01T00:00:00Z", claimed_outcome: claim }, [staticProbe("ledger", { id: "X" })]);
+  const stale = verifyWarrant(w, { maxAgeMs: 60_000, nowMs: Date.parse("2026-06-23T00:00:00Z") });
+  assert.ok(!stale.ok && stale.errors.some((e) => /stale/.test(e)));
+  const fresh = verifyWarrant(w, { maxAgeMs: 60_000, nowMs: Date.parse("2020-01-01T00:00:30Z") });
+  assert.ok(fresh.ok);
 });
 
 // ---- cross-harness portability (v2) ----------------------------------------

@@ -76,5 +76,7 @@ export interface Warrant {
   verdict: Verdict;
   /** Full OpenTrajectory 0.1 record of the run. Context/claim, NOT evidence. */
   body?: Record<string, unknown>;
+  /** Optional anti-replay nonce, unique per (subject, task). See docs/trust-model.md. */
+  nonce?: string;
   signature?: Signature;
 }

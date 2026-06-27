@@ -19,6 +19,7 @@
     "verification": { "$ref": "#/$defs/verification" },
     "verdict": { "$ref": "#/$defs/verdict" },
     "body": { "type": "object", "description": "Full OpenTrajectory 0.1 record of the subject's run. Context/claim, NOT evidence." },
+    "nonce": { "type": "string", "description": "Optional anti-replay nonce, unique per (subject, task). A registry may reject a nonce (or signature) it has already seen." },
     "signature": { "$ref": "#/$defs/signature" }
   },
   "$defs": {
@@ -77,8 +78,8 @@
       "type": "object",
       "required": ["source", "independent", "observed", "match"],
       "properties": {
-        "source": { "type": "string", "description": "The system observed." },
-        "independent": { "type": "boolean", "description": "True iff from a source the subject does not control and could not fabricate. warranted REQUIRES >=1 independent+match item." },
+        "source": { "type": "string", "description": "Stable identifier of the system observed (host/URL/DID). Consumers ground `independent` by recognizing this source as authoritative and outside the subject's control (spec §5.2)." },
+        "independent": { "type": "boolean", "description": "True iff from a source the subject does not control and could not fabricate. warranted REQUIRES >=1 independent+match item; a consumer may further require the source be recognized." },
         "probe": { "type": "string", "description": "Exact query/action run to observe ground truth." },
         "observed": { "description": "What the world actually showed." },
         "expected": { "description": "What the claim predicted." },
