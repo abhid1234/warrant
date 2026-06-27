@@ -13,6 +13,7 @@ npm run demo           # the live "did it book the flight?" clip (console)
 npm run cross-harness  # one agent under 2 harnesses -> one portable reputation (v2)
 npm run a2a            # live HTTP end-to-end: airline + 2 A2A agents + verifier + registry (v3)
 npm run board          # generates ../../site/index.html from the warrants
+npm run playground     # generates ../../site/playground.html (in-browser warrant verifier)
 ```
 Both build `@warrant/verify` + this package with `tsc` first (no npm install at
 runtime). Open the board at `site/index.html` via `file://`.

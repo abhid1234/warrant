@@ -11,7 +11,8 @@
     "a2a": "tsc -p tsconfig.json && node dist/demo/src/a2a-demo.js",
     "github": "tsc -p tsconfig.json && node dist/demo/src/github-verify.js",
     "judge": "tsc -p tsconfig.json && node dist/demo/src/judge-demo.js",
-    "board": "tsc -p tsconfig.json && node dist/demo/src/build-board.js"
+    "board": "tsc -p tsconfig.json && node dist/demo/src/build-board.js",
+    "playground": "tsc -p tsconfig.json && node dist/demo/src/build-playground.js"
   },
   "comment": "No dependencies — Node built-ins only (no external deps). Imports the sibling @warrant/verify by source path; both compile together.",
   "dependencies": {},
