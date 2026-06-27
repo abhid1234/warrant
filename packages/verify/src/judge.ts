@@ -43,7 +43,7 @@ export async function judgeVerification(
   return {
     method: "judge",
     checked_at: checkedAt,
-    verifier_note: `Judged via shipped OpenTrajectory/Inspector judge: ${rationale}`,
+    verifier_note: `Judged via the OpenTrajectory/Inspector judge: ${rationale}`,
     evidence: [
       ...input.evidence,
       {
@@ -54,5 +54,40 @@ export async function judgeVerification(
         match,
       },
     ],
+  };
+}
+
+/**
+ * A real LLM-backed JudgeFn (Gemini), mirroring the shipped OpenTrajectory judge's
+ * approach: it reasons over the INDEPENDENT evidence to classify a fuzzy outcome.
+ * Gated on an API key + network — used when GEMINI_API_KEY is set; for offline/CI,
+ * inject a deterministic JudgeFn instead. Zero-dep (Node built-in fetch).
+ */
+export function geminiJudge(opts: { apiKey: string; model?: string }): JudgeFn {
+  const model = opts.model ?? "gemini-2.5-flash";
+  return async (input) => {
+    const prompt =
+      `You audit whether an agent's claim is supported by INDEPENDENT evidence.\n` +
+      `Reason only over the evidence; do not assume facts not present.\n` +
+      `Question: ${input.question}\n` +
+      `Evidence: ${JSON.stringify(input.evidence)}\n` +
+      `Return ONLY JSON: {"match":"match|mismatch|absent|inconclusive","rationale":"<=1 sentence"}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${opts.apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }),
+    });
+    if (!res.ok) return { match: "inconclusive", rationale: `judge unavailable (HTTP ${res.status})` };
+    const data = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+    try {
+      const parsed = JSON.parse(text) as { match?: EvidenceItem["match"]; rationale?: string };
+      const valid = ["match", "mismatch", "absent", "inconclusive"] as const;
+      const match = valid.includes(parsed.match as (typeof valid)[number]) ? (parsed.match as EvidenceItem["match"]) : "inconclusive";
+      return { match, rationale: parsed.rationale ?? "" };
+    } catch {
+      return { match: "inconclusive", rationale: "judge returned unparseable output" };
+    }
   };
 }

@@ -303,6 +303,54 @@ test("portable reputation aggregates one agent across harnesses", async () => {
   assert.ok(byH.every((r) => r.score === 1)); // identical verdict across harnesses
 });
 
+// ---- N-of-M consensus + verifier reputation --------------------------------
+import { consensusVerdict, verifierStandings } from "../src/consensus.js";
+import { issueJudgedWarrant } from "../src/verify.js";
+
+function voteWarrant(issuerId: string, value: "warranted" | "refuted", asserted: Record<string, unknown> = { id: "T" }): Warrant {
+  return {
+    warrant_version: "0", warrant_id: `${issuerId}-${value}`, issued_at: "2026-06-23T00:00:00Z",
+    issuer: { id: issuerId, name: issuerId }, subject: { id: "agent://s", name: "S" },
+    task_context: { domain: "d" }, intent: { description: "t" },
+    claimed_outcome: { status: "COMPLETED", source: "self-report", asserted_facts: asserted },
+    verification: { method: "world-state-probe", checked_at: "2026-06-23T00:00:00Z", evidence: [{ source: "x", independent: true, observed: {}, match: value === "warranted" ? "match" : "absent" }] },
+    verdict: { value, reasoning: "r" },
+  };
+}
+
+test("consensus: N independent issuers agree -> consensus; disagreement -> disputed", () => {
+  assert.equal(consensusVerdict([voteWarrant("v1", "warranted"), voteWarrant("v2", "warranted")], { n: 2 }).value, "warranted");
+  assert.equal(consensusVerdict([voteWarrant("v1", "refuted"), voteWarrant("v2", "refuted")], { n: 2 }).value, "refuted");
+  assert.equal(consensusVerdict([voteWarrant("v1", "warranted"), voteWarrant("v2", "refuted")], { n: 2 }).value, "disputed");
+  assert.equal(consensusVerdict([voteWarrant("v1", "warranted")], { n: 2 }).value, "unverifiable"); // not enough
+});
+
+test("verifier reputation: a verifier outvoted by peer consensus loses standing", () => {
+  // v1 & v2 warrant the outcome; v3 refutes -> v3 is outvoted.
+  const standings = verifierStandings([voteWarrant("v1", "warranted"), voteWarrant("v2", "warranted"), voteWarrant("v3", "refuted")], { n: 2 });
+  const v3 = standings.find((s) => s.issuerId === "v3");
+  assert.equal(v3?.outvoted, 1);
+  assert.equal(v3?.score, 0);
+});
+
+test("reputation confidence: fewer wins => lower Wilson confidence than many wins", () => {
+  const few = tallyReputation([voteWarrant("v1", "warranted")]).domains[0].agents[0];
+  const many = tallyReputation(Array.from({ length: 20 }, (_, i) => ({ ...voteWarrant("v1", "warranted"), warrant_id: "w" + i }))).domains[0].agents[0];
+  assert.ok(many.confidence > few.confidence, `${many.confidence} should exceed ${few.confidence}`);
+  assert.ok(few.confidence < 1 && many.confidence < 1);
+});
+
+test("issueJudgedWarrant: fuzzy outcome judged over evidence", async () => {
+  const mk = (m: "match" | "mismatch") =>
+    issueJudgedWarrant(
+      { warrant_id: "j_" + m, issued_at: "2026-06-23T00:00:00Z", issuer, subject, task_context: { domain: "code.review" }, intent: { description: "addresses fix" }, claimed_outcome: { status: "COMPLETED", source: "self-report" } },
+      { question: "addressed?", evidence: [{ source: "pr-body", independent: true, observed: "text", match: "inconclusive" }] },
+      async () => ({ match: m, rationale: "stub" }),
+    );
+  assert.equal((await mk("match")).verdict.value, "warranted");
+  assert.equal((await mk("mismatch")).verdict.value, "refuted");
+});
+
 // ---- runner ----------------------------------------------------------------
 (async () => {
   for (const [name, fn] of tests) {

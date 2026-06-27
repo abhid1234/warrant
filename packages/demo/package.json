@@ -10,6 +10,7 @@
     "cross-harness": "tsc -p tsconfig.json && node dist/demo/src/cross-harness.js",
     "a2a": "tsc -p tsconfig.json && node dist/demo/src/a2a-demo.js",
     "github": "tsc -p tsconfig.json && node dist/demo/src/github-verify.js",
+    "judge": "tsc -p tsconfig.json && node dist/demo/src/judge-demo.js",
     "board": "tsc -p tsconfig.json && node dist/demo/src/build-board.js"
   },
   "comment": "No dependencies — Node built-ins only (no external deps). Imports the sibling @warrant/verify by source path; both compile together.",

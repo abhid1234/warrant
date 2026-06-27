@@ -4,6 +4,8 @@
 import type { Probe } from "./probe.js";
 import { gatherEvidence } from "./probe.js";
 import { computeVerdict, checkVerdict } from "./verdict.js";
+import { judgeVerification } from "./judge.js";
+import type { JudgeFn, JudgeInput } from "./judge.js";
 import { validate } from "./validate.js";
 import type {
   ClaimedOutcome,
@@ -48,6 +50,40 @@ export async function issueWarrant(params: IssueParams, probes: Probe[]): Promis
         : undefined,
     evidence,
   };
+  const verdict = computeVerdict(verification);
+
+  const warrant: Warrant = {
+    warrant_version: "0",
+    warrant_id: params.warrant_id,
+    issued_at: params.issued_at,
+    issuer: params.issuer,
+    subject: params.subject,
+    task_context: params.task_context,
+    intent: params.intent,
+    claimed_outcome: params.claimed_outcome,
+    verification,
+    verdict,
+  };
+  if (params.caller) warrant.caller = params.caller;
+  if (params.body) warrant.body = params.body;
+  return warrant;
+}
+
+/**
+ * Issue a warrant for a FUZZY outcome (method: "judge") — when the outcome can't
+ * be reduced to a structural probe ("was the summary accurate?", "did the fix
+ * actually address the bug?"). The JudgeFn reasons over independent evidence
+ * (use geminiJudge in judge.ts, or inject a deterministic one for tests/offline).
+ */
+export async function issueJudgedWarrant(
+  params: Omit<IssueParams, "method">,
+  judgeInput: JudgeInput,
+  judge: JudgeFn,
+): Promise<Warrant> {
+  if (params.issuer.id === params.subject.id)
+    throw new Error("issuer.id must differ from subject.id (no self-warranting)");
+
+  const verification = await judgeVerification(judgeInput, judge, params.issued_at);
   const verdict = computeVerdict(verification);
 
   const warrant: Warrant = {

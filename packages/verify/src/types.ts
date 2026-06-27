@@ -15,6 +15,8 @@ export interface TaskContext {
   domain: string;
   capability?: string;
   tags?: string[];
+  /** Optional task difficulty/value weight (default 1) — discounts farming easy tasks. */
+  weight?: number;
 }
 
 export interface Intent {

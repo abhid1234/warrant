@@ -4,7 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/@avee1234/warrant-verify?color=2b8a3e&label=npm%20%40avee1234%2Fwarrant-verify)](https://www.npmjs.com/package/@avee1234/warrant-verify)
 [![live board](https://img.shields.io/badge/live-reputation%20board-2b8a3e)](https://warrant-gold.vercel.app)
-[![tests](https://img.shields.io/badge/tests-33%20passing-2b8a3e)](packages/)
+[![tests](https://img.shields.io/badge/tests-37%20passing-2b8a3e)](packages/)
 [![deps](https://img.shields.io/badge/dependencies-zero-555)](packages/verify/package.json)
 [![license](https://img.shields.io/badge/license-MIT-555)](LICENSE)
 
@@ -37,8 +37,9 @@ and [`docs/quickstart.md`](./docs/quickstart.md). Full spec + hard constraints i
 Board live at https://warrant-gold.vercel.app *(pending the one-time protection toggle in [`docs/deploy.md`](./docs/deploy.md))*.
 
 ```bash
-cd packages/verify   && npm test            # zero-dep verifier, 25/25
+cd packages/verify   && npm test            # zero-dep verifier, 29/29
 cd packages/demo     && npm run github       # REAL verification against the live GitHub API
+cd packages/demo     && npm run judge        # judged verification of a FUZZY outcome
 cd packages/demo     && npm run demo         # live "did it book the flight?" clip
 cd packages/demo     && npm run cross-harness# one agent, 2 harnesses -> one portable reputation
 cd packages/demo     && npm run a2a          # full HTTP end-to-end: A2A + verifier + registry
@@ -48,7 +49,7 @@ cd packages/registry && npm test             # registry trust gate (valid accept
 
 ## Layout
 ```
-docs/              # gap-analysis, warrant-spec, positioning, trust-model, quickstart, deploy, v3-roadmap
+docs/              # gap-analysis, warrant-spec, positioning, trust-model, reputation-integrity, quickstart, deploy
 schema/            # warrant-0.schema.json (machine-readable spec companion)
 examples/          # hand-authored warrants (green + red) + a2a-extension manifest
 packages/verify/   # zero-dep verifier — world-state probes, verdict engine, signing, schema, reputation, CLI

@@ -44,14 +44,13 @@ the verifier — which is where the next two layers come in.
    outcomes with near-zero trust. *Already in v0.*
 2. **Verifier identity + reputation.** Verifiers are themselves identified parties
    (`issuer.id`, `key_id`). When evidence can't be re-run, the issuer's track record is
-   the signal. Crucially, this reputation is *grounded*: every re-runnable warrant a
-   verifier issues is a chance to be caught lying, so a verifier's standing is anchored
-   by the cases that *can* be checked. **Verifiers earn warranted-style reputation too**
-   — the board applies to them. *(Spec extension.)*
+   the signal. Crucially, this reputation is *grounded*: a verifier outvoted by an
+   independent peer consensus loses standing — anchored by the cases that *can* be
+   checked. *(`verifierStandings()` — implemented.)*
 3. **N-of-M independent verification.** For high-stakes outcomes, require warrants from
-   ≥2 *independent* verifiers and trust the consensus; disagreement → `unverifiable` /
-   dispute. This is the non-crypto analog of staking: **redundancy instead of
-   collateral.** *(Spec extension.)*
+   ≥2 *independent* verifiers and trust the consensus; disagreement → `disputed`. This
+   is the non-crypto analog of staking: **redundancy instead of collateral.**
+   *(`consensusVerdict()` — implemented.)*
 
 ## Who actually runs the verifier — three patterns
 
@@ -79,11 +78,11 @@ cheaper and more enterprise-palatable than putting money on-chain.
 | Threat | Mitigation | Status |
 |---|---|---|
 | Verifier stamps a verdict its evidence doesn't support | `verifyWarrant()` re-derives from evidence; mismatch rejected | ✅ v0 |
-| Verifier fabricates the *observation* | Re-run the probe (persistent state); else N-of-M + verifier reputation | ✅ re-run / ⏳ N-of-M |
-| Verifier colludes with the subject | Same as above — collusion only survives on non-re-runnable evidence *and* a single verifier; independent N-of-M breaks it | ⏳ N-of-M |
+| Verifier fabricates the *observation* | Re-run the probe (persistent state); else N-of-M consensus + verifier reputation | ✅ re-run + `consensusVerdict` |
+| Verifier colludes with the subject | Collusion only survives on non-re-runnable evidence *and* a single verifier; independent N-of-M breaks it, and `verifierStandings` docks the colluder | ✅ `consensusVerdict` / `verifierStandings` |
 | Subject controls the "independent" source (probes its own API and flags it `independent`) | Consumer grounds the flag against **recognized sources** — `verifyWarrant(w, { recognizedSource })` / registry `recognizedSources`; an unrecognized source is treated as non-independent | ✅ opt-in |
 | **Replay** — resubmit an old valid warrant as if fresh | **Freshness window** (`maxAgeMs`) rejects stale/future warrants; the registry rejects a previously-seen `signature` or `nonce` | ✅ opt-in |
-| **Sybil verifiers** — spin up many fake verifiers to fake N-of-M consensus | Verifier identity must be costly/established (DID, domain-bound); weight by *recognized* verifiers, not raw count | ⏳ with N-of-M |
+| **Sybil verifiers** — spin up many fake verifiers to fake N-of-M consensus | Verifier identity must be costly/established (DID, domain-bound); weight by *recognized* verifiers, not raw count. Identity cost is delegated to the identity layer — see [`reputation-integrity.md`](./reputation-integrity.md) | ⚠️ relies on identity layer |
 | Key compromise / rotation | Out of scope for v0; relies on existing PKI/JWKS/DID rotation | ⚠️ deferred |
 
 ## What's enforced today vs. next
@@ -93,8 +92,11 @@ cheaper and more enterprise-palatable than putting money on-chain.
   signature; `unverifiable` as a first-class verdict. **Opt-in:** source-provenance
   grounding (`recognizedSource`), freshness window (`maxAgeMs`), and replay protection
   (signature/`nonce` dedup) — see spec §5.2 and §8.1.
-- **Next (spec extensions):** verifier reputation (the board applied to issuers) and
-  N-of-M independent verification.
+- **Also implemented (library primitives):** N-of-M consensus (`consensusVerdict`) and
+  verifier reputation (`verifierStandings`); reputation-gaming defenses (difficulty
+  weighting, recency decay, Wilson confidence) — see [`reputation-integrity.md`](./reputation-integrity.md).
+- **Next:** surface verifier reputation + consensus in the hosted board UI; a neutral
+  difficulty signal for `task_context.weight`; sybil-cost via the identity layer.
 
 ## One-line summary
 **You don't have to trust the verifier — you have to be able to re-run its evidence.**
