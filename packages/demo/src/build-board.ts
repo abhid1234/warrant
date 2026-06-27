@@ -6,9 +6,9 @@
 import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import type { AgentRep, DomainRep, Reputation, Warrant } from "../../verify/src/index.js";
-import { tallyReputation, repFor, harnessOf } from "../../verify/src/index.js";
-import { allWarrants } from "./scenarios.js";
+import type { AgentRep, DomainRep, Reputation, Warrant, Consensus, VerifierStanding } from "../../verify/src/index.js";
+import { tallyReputation, repFor, harnessOf, consensusVerdict, verifierStandings, outcomeKey } from "../../verify/src/index.js";
+import { allWarrants, multiVerifierWarrants } from "./scenarios.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..", "..", "..", ".."); // dist/demo/src -> repo root
@@ -26,8 +26,30 @@ const esc = (s: unknown): string =>
 const pct = (s: number | null): string => (s === null ? "—" : `${Math.round(s * 100)}%`);
 const cls = (s: number | null): string => (s === null ? "mid" : s >= 0.8 ? "hi" : s <= 0.34 ? "lo" : "mid");
 
-const chip = (v: string): string =>
-  `<span class="chip ${v}">${v === "warranted" ? "warranted" : v === "refuted" ? "refuted" : "unverifiable"}</span>`;
+const CHIP_OK = new Set(["warranted", "refuted", "unverifiable", "disputed"]);
+const chip = (v: string): string => `<span class="chip ${CHIP_OK.has(v) ? v : "unverifiable"}">${esc(v)}</span>`;
+
+function verifierSection(standings: VerifierStanding[]): string {
+  const rows = standings
+    .map((s) => {
+      const c = s.score === null ? "mid" : s.score >= 0.8 ? "hi" : s.score <= 0.34 ? "lo" : "mid";
+      return `<tr><td class="agent">${esc(s.name ?? s.issuerId)}</td>
+        <td class="num"><span class="rate ${c}">${pct(s.score)}</span></td>
+        <td class="num">${s.judged}</td><td class="num dim">${s.outvoted}</td></tr>`;
+    })
+    .join("\n");
+  return `<table class="board"><thead><tr><th>verifier</th><th class="num">agreement</th><th class="num">peer-judged</th><th class="num dim">outvoted</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function consensusSection(rows: Array<{ label: string; domain: string; c: Consensus }>): string {
+  const body = rows
+    .map(
+      (r) => `<tr><td>${esc(r.label)}</td><td class="dim">${esc(r.domain)}</td>
+        <td class="num">${r.c.issuers}</td><td class="num">${r.c.warranted}</td><td class="num">${r.c.refuted}</td><td>${chip(r.c.value)}</td></tr>`,
+    )
+    .join("\n");
+  return `<table class="board"><thead><tr><th>outcome</th><th>context</th><th class="num">verifiers</th><th class="num">✓</th><th class="num">✗</th><th>consensus</th></tr></thead><tbody>${body}</tbody></table>`;
+}
 
 function leaderboard(d: DomainRep): string {
   const rows = d.agents
@@ -36,6 +58,7 @@ function leaderboard(d: DomainRep): string {
       return `<tr>
         <td class="agent">${esc(a.name)}</td>
         <td class="num"><span class="bar"><span class="${c}" style="width:${a.score === null ? 0 : Math.round(a.score * 100)}%"></span></span><span class="rate ${c}">${pct(a.score)}</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">${pct(a.confidence)}</td>
         <td class="num">${a.warranted}</td>
         <td class="num">${a.refuted}</td>
         <td class="num dim">${a.unverifiable}</td>
@@ -46,7 +69,7 @@ function leaderboard(d: DomainRep): string {
   return `<section>
     <h3>${esc(d.domain)}</h3>
     <table class="board">
-      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
+      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </section>`;
@@ -91,7 +114,7 @@ function recent(warrants: Warrant[]): string {
     <tbody>${rows}</tbody></table>`;
 }
 
-function render(warrants: Warrant[]): string {
+function render(warrants: Warrant[], standings: VerifierStanding[], consensusRows: Array<{ label: string; domain: string; c: Consensus }>): string {
   const rep = tallyReputation(warrants);
   const boards = rep.domains.map(leaderboard).join("\n");
   const counts = rep.totals;
@@ -139,6 +162,7 @@ function render(warrants: Warrant[]): string {
   .chip.warranted { color:#fff; background:var(--hi); }
   .chip.refuted { color:#fff; background:var(--lo); }
   .chip.unverifiable { color:#fff; background:#8a8275; }
+  .chip.disputed { color:#fff; background:var(--mid); }
   table.matrix td.cell { text-align:right; font-variant-numeric:tabular-nums; border-left:2px solid var(--paper); font-weight:600; }
   td.cell .celln { display:block; font-size:10.5px; color:var(--dim); font-weight:400; }
   td.cell.hi { color:var(--hi); background:#e7f0e7; } td.cell.lo { color:var(--lo); background:#f5e6e6; } td.cell.mid { color:var(--mid); background:#f4eedc; }
@@ -183,6 +207,14 @@ function render(warrants: Warrant[]): string {
   that is the point.</p>
   <div id="w-matrix">${matrix(rep)}</div>
 
+  <h2>Verifier standings · N-of-M</h2>
+  <p class="abstract" style="margin-top:0">Verifiers are accountable too — a verifier outvoted by an independent peer consensus loses standing.</p>
+  ${verifierSection(standings)}
+
+  <h2>Consensus</h2>
+  <p class="abstract" style="margin-top:0">Outcomes checked by several independent verifiers: agreement → a verdict; disagreement → <em>disputed</em>. Redundancy in place of crypto-economic stake.</p>
+  ${consensusSection(consensusRows)}
+
   <h2>Recent warrants</h2>
   <div id="w-recent">${recent(warrants)}</div>
 
@@ -206,8 +238,22 @@ function render(warrants: Warrant[]): string {
 
 (async () => {
   const warrants = await allWarrants();
+  // Multi-verifier data powers the consensus + verifier-standings sections.
+  const mv = await multiVerifierWarrants();
+  const standings = verifierStandings(mv, { n: 2 });
+  const groups = new Map<string, Warrant[]>();
+  for (const w of mv) {
+    const k = outcomeKey(w);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(w);
+  }
+  const consensusRows = [...groups.values()].map((grp) => ({
+    label: grp[0].claimed_outcome.summary ?? grp[0].warrant_id,
+    domain: grp[0].task_context.domain,
+    c: consensusVerdict(grp, { n: 2 }),
+  }));
   mkdirSync(dataDir, { recursive: true });
-  writeFileSync(join(siteDir, "index.html"), render(warrants));
+  writeFileSync(join(siteDir, "index.html"), render(warrants, standings, consensusRows));
   writeFileSync(join(dataDir, "warrants.json"), JSON.stringify(warrants, null, 2));
   console.log(`board written: site/index.html  (${warrants.length} warrants)`);
   console.log(`data written:  site/data/warrants.json`);

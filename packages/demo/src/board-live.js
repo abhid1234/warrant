@@ -26,6 +26,7 @@
   function harnessOf(w) { return w.body && w.body.harness && typeof w.body.harness.name === "string" ? w.body.harness.name : null; }
   function pct(s) { return s == null ? "—" : Math.round(s * 100) + "%"; }
   function cls(s) { return s == null ? "mid" : s >= 0.8 ? "hi" : s <= 0.34 ? "lo" : "mid"; }
+  function wilson(pos, total) { if (total <= 0) return 0; var z = 1.96, p = pos / total, d = 1 + z * z / total; return Math.max(0, (p + z * z / (2 * total) - z * Math.sqrt((p * (1 - p) + z * z / (4 * total)) / total)) / d); }
   // All registry data is untrusted: escape every string and constrain the chip
   // class to the known enum so verdict.value can't break out of the attribute.
   function chip(v) { var k = v === "warranted" || v === "refuted" || v === "unverifiable" ? v : "unverifiable"; return '<span class="chip ' + k + '">' + esc(v) + "</span>"; }
@@ -48,6 +49,7 @@
       var agents = Object.keys(byDomain[d]).map(function (id) {
         var a = byDomain[d][id];
         a.score = a.warranted + a.refuted === 0 ? null : a.warranted / (a.warranted + a.refuted);
+        a.confidence = wilson(a.warranted, a.warranted + a.refuted);
         return a;
       });
       agents.sort(function (x, y) { return (y.score == null ? -1 : y.score) - (x.score == null ? -1 : x.score) || y.warranted - x.warranted; });
@@ -71,9 +73,10 @@
         var c = cls(a.score);
         return '<tr><td class="agent">' + esc(a.name) + "</td>" +
           '<td class="num"><span class="bar"><span class="' + c + '" style="width:' + (a.score == null ? 0 : Math.round(a.score * 100)) + '%"></span></span><span class="rate ' + c + '">' + pct(a.score) + "</span></td>" +
+          '<td class="num dim">' + pct(a.confidence) + '</td>' +
           '<td class="num">' + a.warranted + '</td><td class="num">' + a.refuted + '</td><td class="num dim">' + a.unverifiable + '</td><td class="num dim">' + a.total + "</td></tr>";
       }).join("");
-      return '<section><h3>' + esc(d.domain) + '</h3><table class="board"><thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead><tbody>' + rows + "</tbody></table></section>";
+      return '<section><h3>' + esc(d.domain) + '</h3><table class="board"><thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead><tbody>' + rows + "</tbody></table></section>";
     }).join(""));
 
     var domains = rep.domains.map(function (d) { return d.domain; });

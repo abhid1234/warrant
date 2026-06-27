@@ -41,6 +41,7 @@
   .chip.warranted { color:#fff; background:var(--hi); }
   .chip.refuted { color:#fff; background:var(--lo); }
   .chip.unverifiable { color:#fff; background:#8a8275; }
+  .chip.disputed { color:#fff; background:var(--mid); }
   table.matrix td.cell { text-align:right; font-variant-numeric:tabular-nums; border-left:2px solid var(--paper); font-weight:600; }
   td.cell .celln { display:block; font-size:10.5px; color:var(--dim); font-weight:400; }
   td.cell.hi { color:var(--hi); background:#e7f0e7; } td.cell.lo { color:var(--lo); background:#f5e6e6; } td.cell.mid { color:var(--mid); background:#f4eedc; }
@@ -81,10 +82,11 @@
   <div id="w-boards"><section>
     <h3>code.bugfix</h3>
     <table class="board">
-      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
+      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
       <tbody><tr>
         <td class="agent">PatchPilot</td>
         <td class="num"><span class="bar"><span class="mid" style="width:67%"></span></span><span class="rate mid">67%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">21%</td>
         <td class="num">2</td>
         <td class="num">1</td>
         <td class="num dim">0</td>
@@ -93,6 +95,7 @@
 <tr>
         <td class="agent">FixItAgent</td>
         <td class="num"><span class="bar"><span class="lo" style="width:33%"></span></span><span class="rate lo">33%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">6%</td>
         <td class="num">1</td>
         <td class="num">2</td>
         <td class="num dim">0</td>
@@ -103,10 +106,11 @@
 <section>
     <h3>payments.refund</h3>
     <table class="board">
-      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
+      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
       <tbody><tr>
         <td class="agent">RefundBot</td>
         <td class="num"><span class="bar"><span class="hi" style="width:100%"></span></span><span class="rate hi">100%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">44%</td>
         <td class="num">3</td>
         <td class="num">0</td>
         <td class="num dim">1</td>
@@ -115,6 +119,7 @@
 <tr>
         <td class="agent">CheapBooker</td>
         <td class="num"><span class="bar"><span class="hi" style="width:100%"></span></span><span class="rate hi">100%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">34%</td>
         <td class="num">2</td>
         <td class="num">0</td>
         <td class="num dim">0</td>
@@ -123,6 +128,7 @@
 <tr>
         <td class="agent">OmniRefund</td>
         <td class="num"><span class="bar"><span class="hi" style="width:100%"></span></span><span class="rate hi">100%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">34%</td>
         <td class="num">2</td>
         <td class="num">0</td>
         <td class="num dim">0</td>
@@ -133,10 +139,11 @@
 <section>
     <h3>travel.booking</h3>
     <table class="board">
-      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
+      <thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead>
       <tbody><tr>
         <td class="agent">TravelBooker</td>
         <td class="num"><span class="bar"><span class="hi" style="width:100%"></span></span><span class="rate hi">100%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">44%</td>
         <td class="num">3</td>
         <td class="num">0</td>
         <td class="num dim">0</td>
@@ -145,6 +152,7 @@
 <tr>
         <td class="agent">CheapBooker</td>
         <td class="num"><span class="bar"><span class="lo" style="width:0%"></span></span><span class="rate lo">0%</span></td>
+        <td class="num dim" title="Wilson lower bound — confidence-adjusted rate">0%</td>
         <td class="num">0</td>
         <td class="num">2</td>
         <td class="num dim">0</td>
@@ -162,6 +170,27 @@
 <tr><td class="agent">PatchPilot</td><td class="num cell mid">67%<span class="celln">2/3</span></td><td class="num cell empty">—</td><td class="num cell empty">—</td></tr>
 <tr><td class="agent">FixItAgent</td><td class="num cell lo">33%<span class="celln">1/3</span></td><td class="num cell empty">—</td><td class="num cell empty">—</td></tr>
 <tr><td class="agent">OmniRefund</td><td class="num cell empty">—</td><td class="num cell hi">100%<span class="celln">2/2</span></td><td class="num cell empty">—</td></tr></tbody></table></div>
+
+  <h2>Verifier standings · N-of-M</h2>
+  <p class="abstract" style="margin-top:0">Verifiers are accountable too — a verifier outvoted by an independent peer consensus loses standing.</p>
+  <table class="board"><thead><tr><th>verifier</th><th class="num">agreement</th><th class="num">peer-judged</th><th class="num dim">outvoted</th></tr></thead><tbody><tr><td class="agent">AuditA</td>
+        <td class="num"><span class="rate hi">100%</span></td>
+        <td class="num">2</td><td class="num dim">0</td></tr>
+<tr><td class="agent">AuditB</td>
+        <td class="num"><span class="rate hi">100%</span></td>
+        <td class="num">2</td><td class="num dim">0</td></tr>
+<tr><td class="agent">AuditC</td>
+        <td class="num"><span class="rate mid">67%</span></td>
+        <td class="num">3</td><td class="num dim">1</td></tr></tbody></table>
+
+  <h2>Consensus</h2>
+  <p class="abstract" style="margin-top:0">Outcomes checked by several independent verifiers: agreement → a verdict; disagreement → <em>disputed</em>. Redundancy in place of crypto-economic stake.</p>
+  <table class="board"><thead><tr><th>outcome</th><th>context</th><th class="num">verifiers</th><th class="num">✓</th><th class="num">✗</th><th>consensus</th></tr></thead><tbody><tr><td>Settled refund RF-A ($200).</td><td class="dim">payments.settlement</td>
+        <td class="num">3</td><td class="num">3</td><td class="num">0</td><td><span class="chip warranted">warranted</span></td></tr>
+<tr><td>Settled refund RF-B ($75).</td><td class="dim">payments.settlement</td>
+        <td class="num">3</td><td class="num">0</td><td class="num">3</td><td><span class="chip refuted">refuted</span></td></tr>
+<tr><td>Settled refund RF-C ($40).</td><td class="dim">payments.settlement</td>
+        <td class="num">3</td><td class="num">2</td><td class="num">1</td><td><span class="chip disputed">disputed</span></td></tr></tbody></table>
 
   <h2>Recent warrants</h2>
   <div id="w-recent"><table class="board recent">
@@ -359,6 +388,7 @@
   function harnessOf(w) { return w.body && w.body.harness && typeof w.body.harness.name === "string" ? w.body.harness.name : null; }
   function pct(s) { return s == null ? "—" : Math.round(s * 100) + "%"; }
   function cls(s) { return s == null ? "mid" : s >= 0.8 ? "hi" : s <= 0.34 ? "lo" : "mid"; }
+  function wilson(pos, total) { if (total <= 0) return 0; var z = 1.96, p = pos / total, d = 1 + z * z / total; return Math.max(0, (p + z * z / (2 * total) - z * Math.sqrt((p * (1 - p) + z * z / (4 * total)) / total)) / d); }
   // All registry data is untrusted: escape every string and constrain the chip
   // class to the known enum so verdict.value can't break out of the attribute.
   function chip(v) { var k = v === "warranted" || v === "refuted" || v === "unverifiable" ? v : "unverifiable"; return '<span class="chip ' + k + '">' + esc(v) + "</span>"; }
@@ -381,6 +411,7 @@
       var agents = Object.keys(byDomain[d]).map(function (id) {
         var a = byDomain[d][id];
         a.score = a.warranted + a.refuted === 0 ? null : a.warranted / (a.warranted + a.refuted);
+        a.confidence = wilson(a.warranted, a.warranted + a.refuted);
         return a;
       });
       agents.sort(function (x, y) { return (y.score == null ? -1 : y.score) - (x.score == null ? -1 : x.score) || y.warranted - x.warranted; });
@@ -404,9 +435,10 @@
         var c = cls(a.score);
         return '<tr><td class="agent">' + esc(a.name) + "</td>" +
           '<td class="num"><span class="bar"><span class="' + c + '" style="width:' + (a.score == null ? 0 : Math.round(a.score * 100)) + '%"></span></span><span class="rate ' + c + '">' + pct(a.score) + "</span></td>" +
+          '<td class="num dim">' + pct(a.confidence) + '</td>' +
           '<td class="num">' + a.warranted + '</td><td class="num">' + a.refuted + '</td><td class="num dim">' + a.unverifiable + '</td><td class="num dim">' + a.total + "</td></tr>";
       }).join("");
-      return '<section><h3>' + esc(d.domain) + '</h3><table class="board"><thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead><tbody>' + rows + "</tbody></table></section>";
+      return '<section><h3>' + esc(d.domain) + '</h3><table class="board"><thead><tr><th>agent</th><th class="num">warranted&nbsp;rate</th><th class="num dim">conf</th><th class="num">✓</th><th class="num">✗</th><th class="num dim">?</th><th class="num dim">n</th></tr></thead><tbody>' + rows + "</tbody></table></section>";
     }).join(""));
 
     var domains = rep.domains.map(function (d) { return d.domain; });

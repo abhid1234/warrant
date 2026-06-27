@@ -149,6 +149,52 @@ const SEEDS: Seed[] = [
   { id: "s_fx3", ts: "2026-06-20T14:00:00Z", agent: FixItAgent, domain: "code.bugfix", capability: "fix_bug", desc: "Fix memory leak (PR #503)", summary: "Tests green on #503.", asserted: { pr: "#503", tests_pass: true }, truth: { pr: "#503", tests_pass: false, ci: "red" }, source: "ci-system", probe: "GET /ci/pr/503" },
 ];
 
+// Multi-verifier outcomes (for the N-of-M consensus + verifier-reputation views).
+// One agent (PayBot), one outcome each, verified by three INDEPENDENT verifiers.
+const VA: Party = { id: "verifier://audit-a", name: "AuditA", key_id: "ka" };
+const VB: Party = { id: "verifier://audit-b", name: "AuditB", key_id: "kb" };
+const VC: Party = { id: "verifier://audit-c", name: "AuditC", key_id: "kc" };
+const PayBot: Party = { id: "https://agents.example/paybot/card.json", name: "PayBot" };
+
+/** Warrants from multiple verifiers about the same outcomes — feeds consensus + standings. */
+export async function multiVerifierWarrants(): Promise<Warrant[]> {
+  const out: Warrant[] = [];
+  // outcome id -> per-verifier verdict (ok = confirms, no = refutes)
+  const outcomes: Array<{ rf: string; summary: string; v: Record<string, "ok" | "no"> }> = [
+    { rf: "RF-A", summary: "Settled refund RF-A ($200).", v: { a: "ok", b: "ok", c: "ok" } }, // unanimous -> warranted
+    { rf: "RF-B", summary: "Settled refund RF-B ($75).", v: { a: "no", b: "no", c: "no" } }, // unanimous -> refuted (lie caught by 3)
+    { rf: "RF-C", summary: "Settled refund RF-C ($40).", v: { a: "ok", b: "ok", c: "no" } }, // C dissents -> disputed; C docked
+  ];
+  const verifiers: Array<[string, Party]> = [["a", VA], ["b", VB], ["c", VC]];
+  let t = 0;
+  for (const o of outcomes) {
+    for (const [k, V] of verifiers) {
+      const settled = o.v[k] === "ok";
+      const probe: Probe = {
+        source: "stripe-refunds-api",
+        independent: true,
+        run: async () => ({ observed: settled ? { refund_id: o.rf, status: "SETTLED" } : { status: "NOT_FOUND" }, probe: `GET /refunds/${o.rf}` }),
+      };
+      out.push(
+        await issueWarrant(
+          {
+            warrant_id: `wrt_mv_${o.rf}_${k}`,
+            issued_at: `2026-06-23T0${t++}:00:00Z`,
+            issuer: V,
+            subject: PayBot,
+            caller: CONCIERGE,
+            task_context: { domain: "payments.settlement", capability: "issue_refund", tags: ["multi-verifier"] },
+            intent: { description: `Confirm refund ${o.rf} settled.` },
+            claimed_outcome: { status: "COMPLETED", source: "self-report", summary: o.summary, asserted_facts: { refund_id: o.rf, status: "SETTLED" } },
+          },
+          [probe],
+        ),
+      );
+    }
+  }
+  return out;
+}
+
 /** Every warrant the board displays: live flight pair + seeded set + cross-harness pair. */
 export async function allWarrants(): Promise<Warrant[]> {
   const flight = await runFlightDemo();
