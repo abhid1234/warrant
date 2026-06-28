@@ -1,0 +1,7 @@
+# Opt-in observability example — NOT part of the zero-dep core verifier.
+# Sends the booker agent's traces to Arize AX (OpenTelemetry + OpenInference).
+arize-otel>=0.7
+openinference-instrumentation-openai>=0.1
+openinference-semantic-conventions>=0.1
+openai>=1.0
+opentelemetry-sdk>=1.20
