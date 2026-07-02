@@ -8,6 +8,8 @@
 [![deps](https://img.shields.io/badge/dependencies-zero-555)](packages/verify/package.json)
 [![license](https://img.shields.io/badge/license-MIT-555)](LICENSE)
 
+![Warrant — verify what an AI agent actually did](assets/demo.gif)
+
 When one agent hires another (over A2A/MCP), Warrant independently checks the **world state** to prove the work *actually happened*, then issues a signed **warrant** (intent → claimed outcome → independent verification → verdict → signature). Verified warrants roll into a **portable reputation** the agent carries everywhere.
 
 > To *warrant* something = to certify it's true.

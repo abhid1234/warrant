@@ -86,7 +86,7 @@ function render(warrants: Warrant[]): string {
   header{max-width:1120px;margin:0 auto;padding:40px 28px 14px}
   .kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;font-size:11px;color:var(--dim);margin:0 0 8px}
   h1{font-size:36px;margin:0 0 4px;font-weight:700;letter-spacing:-.02em}
-  .sub{font-size:16px;color:var(--ink2);margin:0}
+  .sub{font-size:16px;color:var(--ink2);margin:0} .sub b{color:var(--ink);font-weight:600}
   .toolbar{max-width:1120px;margin:14px auto 0;padding:0 28px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:16px}
   .fchip{font-family:var(--mono);font-size:11px;border:1px solid var(--rule);background:var(--bg2);border-radius:5px;padding:4px 10px;cursor:pointer;color:var(--ink2);transition:.12s}
   .fchip:hover{border-color:#39414f;color:var(--ink)} .fchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -131,7 +131,7 @@ function render(warrants: Warrant[]): string {
 <header>
   <p class="kicker">Warrant · playground</p>
   <h1>Verify a claim against the world</h1>
-  <p class="sub">Pick a warrant. It's re-verified in your browser — the verdict is re-derived from evidence, never trusted.</p>
+  <p class="sub">Your agent says it booked the flight — <b>did it?</b> Pick a warrant; it's re-verified in your browser, the verdict re-derived from evidence, never trusted.</p>
 </header>
 <div class="toolbar">
   <span class="fchip on" data-f="all">all</span>
